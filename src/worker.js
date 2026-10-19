@@ -60,6 +60,27 @@ async function readBody(request) {
   return json;
 }
 
+function managementBase(request, env) {
+  if (!env.FRONTEND_BASE_URL) return publicOrigin(request, env) + "/";
+  const url = new URL(env.FRONTEND_BASE_URL);
+  if (!["https:", "http:"].includes(url.protocol)) throw new Error("Invalid FRONTEND_BASE_URL");
+  url.hash = ""; url.search = "";
+  if (!url.pathname.endsWith("/")) url.pathname += "/";
+  return url.href;
+}
+function withApiCors(response, request, env) {
+  const origin = request.headers.get("Origin");
+  if (!origin || !new URL(request.url).pathname.startsWith("/api/")) return response;
+  const trustedOrigin = env.CORS_ALLOWED_ORIGIN || "https://babycrttv.github.io";
+  if (origin !== trustedOrigin && origin !== new URL(request.url).origin) return response;
+  const headers = new Headers(response.headers);
+  headers.set("Access-Control-Allow-Origin", origin);
+  headers.set("Access-Control-Allow-Methods", "GET, POST, PATCH, OPTIONS");
+  headers.set("Access-Control-Allow-Headers", "Authorization, Content-Type");
+  headers.set("Access-Control-Max-Age", "600");
+  headers.set("Vary", "Origin");
+  return new Response(response.body, { status: response.status, headers });
+}
 function publicOrigin(request, env) {
   if (!env.PUBLIC_BASE_URL) return new URL(request.url).origin;
   const url = new URL(env.PUBLIC_BASE_URL);
@@ -97,7 +118,7 @@ async function handleApi(request, env, path) {
       title,
       destination,
       scanUrl: origin + "/r/" + id,
-      manageUrl: origin + "/#/manage/" + id + "/" + secret
+      manageUrl: managementBase(request, env) + "#/manage/" + id + "/" + secret
     }, 201);
   }
 
@@ -151,15 +172,17 @@ async function handleRedirect(request, env, ctx, id) {
   });
 }
 
-export default {
-  async fetch(request, env, ctx) {
+async function fetchInternal(request, env, ctx) {
     try {
       const url = new URL(request.url);
       const path = url.pathname;
       if (path === "/health" && request.method === "GET") {
         return responseJson({ status: "ok", service: "QRHaven" });
       }
-      if (path === "/api" || path.startsWith("/api/")) return await handleApi(request, env, path);
+      if (path === "/api" || path.startsWith("/api/")) {
+        if (request.method === "OPTIONS") return new Response(null, { status: 204 });
+        return await handleApi(request, env, path);
+      }
       const redirect = path.match(/^\/r\/([A-Za-z0-9_-]{18})$/);
       if (redirect && ["GET", "HEAD"].includes(request.method)) {
         return await handleRedirect(request, env, ctx, redirect[1]);
@@ -182,5 +205,9 @@ export default {
       console.error("QRHaven server error", error);
       return apiError("Server error. Please try again.", 500);
     }
+ }
+export default {
+  async fetch(request, env, ctx) {
+    return withApiCors(await fetchInternal(request, env, ctx), request, env);
   }
 };
