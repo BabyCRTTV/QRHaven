@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#edf1f7">
+  <meta name="description" content="Create QR codes that stay the same even when you change where they lead.">
+  <title>QRHaven — QR codes that can change with you</title>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <a class="brand" href="/" aria-label="QRHaven home"><span class="brand-mark">▦</span><span>QR<span class="brand-accent">Haven</span></span></a>
+      <span class="top-caption">PERMANENT QR LINKS · SIMPLE BY DESIGN</span>
+    </header>
+    <main>
+      <section class="hero">
+        <span class="eyebrow">YOUR LINK, YOUR RULES</span>
+        <h1>One QR code.<br><em>Endless possibilities.</em></h1>
+        <p>Make a QR code for any website. Update where it leads whenever you want — without printing a new code.</p>
+      </section>
+      <div class="layout">
+        <section class="panel" id="creator-panel">
+          <div class="panel-heading"><span class="step">01</span><h2>Create a QR code</h2></div>
+          <form id="create-form">
+            <label for="destination">Your link <span class="required">*</span></label>
+            <input id="destination" name="destination" type="url" inputmode="url" placeholder="https://your-website.com" autocomplete="url" required maxlength="2048">
+            <p class="field-hint">Enter the page you want people to visit.</p>
+            <label for="title">Give it a name <span class="muted">(optional)</span></label>
+            <input id="title" name="title" type="text" placeholder="My website, business card, menu…" maxlength="80">
+            <button class="primary-button" id="create-button" type="submit">Generate my QR code <span aria-hidden="true">↗</span></button>
+          </form>
+          <p class="fine-print"><span class="status-dot"></span> Always editable. No account required. Keep your private edit link safe.</p>
+        </section>
+        <section class="panel preview-panel" id="result-panel" hidden>
+          <div class="panel-heading"><span class="step">02</span><h2>Your QR code</h2></div>
+          <div class="qr-paper"><canvas id="qr-canvas" aria-label="Generated QR code"></canvas></div>
+          <p class="qr-caption">READY TO SHARE · PERMANENT LINK</p>
+          <a id="scan-url" class="scan-url" target="_blank" rel="noreferrer noopener"></a>
+          <div class="button-row">
+            <button type="button" class="secondary-button" id="png-button">Download PNG</button>
+            <button type="button" class="secondary-button" id="svg-button">Download SVG</button>
+          </div>
+          <button type="button" class="text-button" id="copy-scan">Copy permanent link ↗</button>
+          <div class="owner-note">
+            <strong>Need to change the destination later?</strong>
+            <p>Your QR stays the same. Open the private management link below whenever you need to edit it.</p>
+            <a href="#" id="manage-link">Manage this QR code →</a>
+            <button type="button" class="text-button small" id="copy-manage">Copy private management link</button>
+          </div>
+        </section>
+        <section class="panel placeholder-panel" id="empty-panel">
+          <div class="empty-icon">▦</div>
+          <h2>Something good<br>starts with a scan.</h2>
+          <p>Your QR code will appear here, ready to download, print, or share.</p>
+        </section>
+        <section class="panel" id="manager-panel" hidden>
+          <div class="panel-heading"><span class="step">✎</span><h2>Manage QR code</h2></div>
+          <p class="manager-intro">The QR image and short link never change. Edit the destination below.</p>
+          <form id="edit-form">
+            <label for="edit-destination">Current destination</label>
+            <input id="edit-destination" type="url" inputmode="url" autocomplete="url" required maxlength="2048">
+            <label for="edit-title">Label <span class="muted">(optional)</span></label>
+            <input id="edit-title" type="text" maxlength="80">
+            <button type="submit" id="save-button" class="primary-button">Save new destination <span aria-hidden="true">✓</span></button>
+          </form>
+          <div class="manager-details">
+            <span class="meta-label">PERMANENT SCAN LINK</span>
+            <a id="manager-scan-url" href="#" target="_blank" rel="noopener noreferrer"></a>
+            <p id="scan-count"></p>
+            <button type="button" id="copy-manager" class="text-button">Copy permanent link ↗</button>
+          </div>
+          <button id="back-button" class="text-button back-button" type="button">← Create another QR code</button>
+        </section>
+      </div>
+      <p id="notice" class="notice" role="status" aria-live="polite" hidden></p>
+      <section class="how-it-works">
+        <div><span>①</span><strong>Paste any website</strong><p>A link to your store, portfolio, menu, or anywhere else.</p></div>
+        <div><span>②</span><strong>Save your QR code</strong><p>Download an image that contains your permanent QRHaven link.</p></div>
+        <div><span>③</span><strong>Change it later</strong><p>Update the destination with your private edit link. No reprints.</p></div>
+      </section>
+      <p class="permanence-note">A QRHaven code remains usable while this service, its domain, and its saved link record stay online. Changes to another site's address aren't detected automatically — update your destination when needed.</p>
+    </main>
+    <footer><span>▦ QRHaven</span><span>A little less reprinting. A lot more flexibility.</span></footer>
+  </div>
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
