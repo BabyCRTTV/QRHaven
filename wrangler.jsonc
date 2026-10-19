@@ -3,6 +3,10 @@
   "name": "qrhaven",
   "main": "src/worker.js",
   "compatibility_date": "2026-10-19",
+  "vars": {
+    "FRONTEND_BASE_URL": "https://babycrttv.github.io/QRHaven/",
+    "CORS_ALLOWED_ORIGIN": "https://babycrttv.github.io"
+  },
   "assets": {
     "directory": "./dist",
     "binding": "ASSETS",
