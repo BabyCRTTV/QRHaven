@@ -3,6 +3,8 @@ import "./style.css";
 
 const el = id => document.getElementById(id);
 const form = el("create-form");
+const apiOrigin = (import.meta.env.VITE_API_ORIGIN || "").replace(/\/$/, "");
+const isGithubPages = location.hostname.endsWith(".github.io");
 const result = el("result-panel");
 const empty = el("empty-panel");
 const manager = el("manager-panel");
@@ -24,7 +26,10 @@ function safeUrl(text) {
   return /^[a-z][a-z0-9+.-]*:/i.test(trimmed) ? trimmed : "https://" + trimmed;
 }
 async function requestApi(path, options = {}) {
-  const response = await fetch(path, options);
+  if (isGithubPages && !apiOrigin) {
+    throw new Error("QRHaven needs the Cloudflare redirect service to be connected first.");
+  }
+  const response = await fetch(apiOrigin + path, options);
   let data;
   try { data = await response.json(); } catch { throw new Error("The server returned an unexpected response."); }
   if (!response.ok) throw new Error(data.error || "Something went wrong. Please try again.");
@@ -164,3 +169,7 @@ el("edit-form").addEventListener("submit", async event => {
 });
 window.addEventListener("hashchange", loadManage);
 loadManage();
+if (isGithubPages && !apiOrigin) {
+  el("create-button").disabled = true;
+  alertUser("This Pages preview needs the Cloudflare service before it can generate dynamic QR codes. See the README for deployment.", true);
+}
