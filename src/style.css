@@ -44,7 +44,7 @@ input:focus { border-color: #7284d0; box-shadow: 0 0 0 3px #7284d026; }
 .qr-caption { margin: 14px 0; color: #61a58b; }
 .scan-url, #manager-scan-url { display: block; overflow-wrap: anywhere; font-size: 13px; }
 .button-row { display: flex; gap: 11px; margin-top: 20px; }
-.secondary-button { background: #edf0fa; color: #536ab3; border: 1px solid #dee3f5; border-radius: 10px; font-weight: 700; padding: 12px; flex: 1; }
+.secondary-button { background: #edf0fa; color: #536ab3; border: 1px solid #dee3f5; border-radius: 10px; font-weight: 700; padding: 12px; flex: 1; text-decoration: none; }
 .secondary-button:hover { background: #e2e7f8; }
 .text-button { display: inline-block; background: none; color: #596eb8; font-size: 13px; font-weight: 700; border: none; padding: 13px 3px 0; }
 .text-button:hover { text-decoration: underline; }

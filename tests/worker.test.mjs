@@ -31,12 +31,13 @@ class FakeDb {
 }
 function fixture() {
   const env = { DB: new FakeDb(), ASSETS: { fetch: async () => new Response("asset") },
+    CREATE_LIMITER: { limit: async () => ({ success: true }) },
     FRONTEND_BASE_URL: "https://babycrttv.github.io/QRHaven/",
     CORS_ALLOWED_ORIGIN: "https://babycrttv.github.io" };
   const pending = [];
   const ctx = { waitUntil: p => pending.push(p) };
   const call = (path, init) => worker.fetch(new Request("https://qr.example" + path, init), env, ctx);
-  return { call, pending };
+  return { call, pending, env };
 }
 test("validates destinations and labels", () => {
   assert.equal(validateDestination(" https://example.com/a "), "https://example.com/a");
@@ -94,4 +95,30 @@ test("invalid requests and unknown redirects", async () => {
   assert.equal(oversize.status, 413);
   assert.equal((await call("/r/AAAAAAAAAAAAAAAAAA")).status, 404);
   assert.equal((await call("/health")).status, 200);
+});
+
+test("creation protection rejects untrusted origins and rate limits before database writes", async () => {
+  const { call, env } = fixture();
+  const post = headers => call("/api/links", { method: "POST", headers,
+    body: JSON.stringify({ destination: "https://example.com" }) });
+  assert.equal((await post({ Origin: "https://untrusted.example" })).status, 403);
+  env.CREATE_LIMITER = { limit: async ({ key }) => {
+    assert.equal(key, "create:192.0.2.1");
+    return { success: false };
+  } };
+  const response = await post({ "CF-Connecting-IP": "192.0.2.1", Origin: env.CORS_ALLOWED_ORIGIN });
+  assert.equal(response.status, 429);
+  assert.equal(response.headers.get("Retry-After"), "60");
+  assert.equal(response.headers.get("Access-Control-Allow-Origin"), env.CORS_ALLOWED_ORIGIN);
+  assert.equal(env.DB.rows.size, 0);
+  delete env.CREATE_LIMITER;
+  assert.equal((await post({})).status, 503);
+});
+
+test("API-only Worker redirects its homepage to Pages", async () => {
+  const { call, env } = fixture();
+  delete env.ASSETS;
+  const response = await call("/");
+  assert.equal(response.status, 302);
+  assert.equal(response.headers.get("Location"), env.FRONTEND_BASE_URL);
 });

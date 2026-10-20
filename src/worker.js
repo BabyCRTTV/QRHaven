@@ -49,8 +49,27 @@ function responseJson(body, status = 200) {
 }
 
 async function readBody(request) {
-  const raw = await request.text();
-  if (raw.length > MAX_BODY) throw Object.assign(new Error("Request is too large."), { status: 413 });
+  const reader = request.body?.getReader();
+  const chunks = [];
+  let size = 0;
+  if (reader) {
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        size += value.byteLength;
+        if (size > MAX_BODY) {
+          await reader.cancel();
+          throw Object.assign(new Error("Request is too large."), { status: 413 });
+        }
+        chunks.push(value);
+      }
+    } finally { reader.releaseLock(); }
+  }
+  const bytes = new Uint8Array(size);
+  let offset = 0;
+  for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.byteLength; }
+  const raw = new TextDecoder().decode(bytes);
   let json;
   try { json = JSON.parse(raw); }
   catch { throw Object.assign(new Error("Send valid JSON."), { status: 400 }); }
@@ -103,6 +122,18 @@ const apiError = (message, status = 400) => responseJson({ error: message }, sta
 
 async function handleApi(request, env, path) {
   if (path === "/api/links" && request.method === "POST") {
+    const requestOrigin = request.headers.get("Origin");
+    if (requestOrigin && requestOrigin !== env.CORS_ALLOWED_ORIGIN && requestOrigin !== new URL(request.url).origin) {
+      return apiError("This origin cannot create QR codes.", 403);
+    }
+    if (!env.CREATE_LIMITER) return apiError("QR creation is temporarily unavailable.", 503);
+    const ip = request.headers.get("CF-Connecting-IP") || "local";
+    const { success } = await env.CREATE_LIMITER.limit({ key: "create:" + ip });
+    if (!success) {
+      const response = apiError("Too many QR codes created. Please wait a minute and try again.", 429);
+      response.headers.set("Retry-After", "60");
+      return response;
+    }
     const body = await readBody(request);
     const destination = validateDestination(body.destination);
     const title = validateTitle(body.title);
@@ -189,6 +220,8 @@ async function fetchInternal(request, env, ctx) {
       }
       if (path.startsWith("/r/")) return new Response("QR code not found.", { status: 404 });
       if (!["GET", "HEAD"].includes(request.method)) return new Response("Method not allowed.", { status: 405 });
+      // API-only deployments send visitors to the public GitHub Pages app.
+      if (!env.ASSETS) return Response.redirect(managementBase(request, env), 302);
       const asset = await env.ASSETS.fetch(request);
       const headers = new Headers(asset.headers);
       headers.set("Referrer-Policy", "no-referrer");

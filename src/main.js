@@ -13,6 +13,7 @@ const notice = el("notice");
 
 let created = null;
 let manageSession = null;
+let svgObjectUrl = null;
 
 function alertUser(message, error = false) {
   notice.hidden = false;
@@ -43,14 +44,6 @@ async function copy(value, what) {
     alertUser("Could not copy automatically. Please select the link and copy it.", true);
   }
 }
-function asDownload(href, name) {
-  const a = document.createElement("a");
-  a.href = href;
-  a.download = name;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-}
 function showLink(node, url) {
   node.href = url;
   node.textContent = url;
@@ -63,6 +56,16 @@ async function renderQr(url) {
 }
 async function showResult(data) {
   await renderQr(data.scanUrl);
+  // Prepare real download links before the user taps, including on mobile.
+  const options = { width: 1200, margin: 4, errorCorrectionLevel: "M",
+    color: { dark: "#1c2b4aff", light: "#ffffffff" } };
+  el("png-button").href = await QRCode.toDataURL(data.scanUrl, options);
+  el("png-button").download = "qrhaven-" + data.id + ".png";
+  const svg = await QRCode.toString(data.scanUrl, { ...options, type: "svg" });
+  if (svgObjectUrl) URL.revokeObjectURL(svgObjectUrl);
+  svgObjectUrl = URL.createObjectURL(new Blob([svg], { type: "image/svg+xml" }));
+  el("svg-button").href = svgObjectUrl;
+  el("svg-button").download = "qrhaven-" + data.id + ".svg";
   created = data;
   empty.hidden = true;
   result.hidden = false;
@@ -88,28 +91,6 @@ form.addEventListener("submit", async event => {
     result.scrollIntoView({ behavior: "smooth", block: "nearest" });
   } catch (error) { alertUser(error.message, true); }
   finally { button.disabled = false; }
-});
-el("png-button").addEventListener("click", async () => {
-  if (!created) return;
-  try {
-    const data = await QRCode.toDataURL(created.scanUrl, {
-      width: 1200, margin: 4, errorCorrectionLevel: "M",
-      color: { dark: "#1c2b4aff", light: "#ffffffff" }
-    });
-    asDownload(data, "qrhaven-" + created.id + ".png");
-  } catch (error) { alertUser(error.message, true); }
-});
-el("svg-button").addEventListener("click", async () => {
-  if (!created) return;
-  try {
-    const svg = await QRCode.toString(created.scanUrl, {
-      type: "svg", margin: 4, errorCorrectionLevel: "M",
-      color: { dark: "#1c2b4aff", light: "#ffffffff" }
-    });
-    const blobUrl = URL.createObjectURL(new Blob([svg], { type: "image/svg+xml" }));
-    asDownload(blobUrl, "qrhaven-" + created.id + ".svg");
-    setTimeout(() => URL.revokeObjectURL(blobUrl), 1500);
-  } catch (error) { alertUser(error.message, true); }
 });
 el("copy-scan").addEventListener("click", () => { if (created) copy(created.scanUrl, "Permanent link"); });
 el("copy-manage").addEventListener("click", () => { if (created) copy(created.manageUrl, "Private management link"); });
