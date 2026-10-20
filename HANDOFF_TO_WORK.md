@@ -2,8 +2,8 @@
 
 Repository: https://github.com/BabyCRTTV/QRHaven
 Target live Pages site: https://babycrttv.github.io/QRHaven/
-Backend: Cloudflare Workers + D1 (needs authorization and deployment)
-Status: Source code + publishing workflows added. Do not treat this as live until both Pages and Cloudflare are checked.
+Backend: Cloudflare Workers + D1 (deployed)
+Status: GitHub Pages and Cloudflare are connected. Read DEPLOYMENT.md for production resources and verification. Instructions below are retained as the original requirements; do not recreate the production database or change the stable redirect host during routine updates.
 
 ## Copy this prompt into ChatGPT Work
 

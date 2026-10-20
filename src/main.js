@@ -114,6 +114,10 @@ async function loadManage() {
   const match = location.hash.match(/^#\/manage\/([A-Za-z0-9_-]{18})\/([A-Za-z0-9_-]{43})$/);
   if (!match) { manageSession = null; showCreator(); return; }
   const [, id, key] = match;
+  manageSession = null;
+  el("edit-destination").disabled = true;
+  el("edit-title").disabled = true;
+  el("save-button").disabled = true;
   creator.hidden = true;
   empty.hidden = true;
   result.hidden = true;
@@ -130,6 +134,9 @@ async function loadManage() {
     el("edit-title").value = data.title;
     showLink(el("manager-scan-url"), data.scanUrl);
     el("scan-count").textContent = (data.scans || 0).toLocaleString() + " recorded scans";
+    el("edit-destination").disabled = false;
+    el("edit-title").disabled = false;
+    el("save-button").disabled = false;
   } catch (error) {
     manageSession = null;
     alertUser("Could not open this QR code: " + error.message, true);
