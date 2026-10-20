@@ -14,6 +14,7 @@ const notice = el("notice");
 let created = null;
 let manageSession = null;
 let svgObjectUrl = null;
+let pngObjectUrl = null;
 
 function alertUser(message, error = false) {
   notice.hidden = false;
@@ -59,7 +60,13 @@ async function showResult(data) {
   // Prepare real download links before the user taps, including on mobile.
   const options = { width: 1200, margin: 4, errorCorrectionLevel: "M",
     color: { dark: "#1c2b4aff", light: "#ffffffff" } };
-  el("png-button").href = await QRCode.toDataURL(data.scanUrl, options);
+  const downloadCanvas = document.createElement("canvas");
+  await QRCode.toCanvas(downloadCanvas, data.scanUrl, options);
+  const png = await new Promise(resolve => downloadCanvas.toBlob(resolve, "image/png"));
+  if (!png) throw new Error("Could not prepare the PNG image. Please try again.");
+  if (pngObjectUrl) URL.revokeObjectURL(pngObjectUrl);
+  pngObjectUrl = URL.createObjectURL(png);
+  el("png-button").href = pngObjectUrl;
   el("png-button").download = "qrhaven-" + data.id + ".png";
   const svg = await QRCode.toString(data.scanUrl, { ...options, type: "svg" });
   if (svgObjectUrl) URL.revokeObjectURL(svgObjectUrl);
